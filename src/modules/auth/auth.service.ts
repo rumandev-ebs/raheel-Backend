@@ -13,9 +13,9 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { MailService } from 'src/mail/mail.service';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { MailService } from '../../mail/mail.service';
 @Injectable()
 export class AuthService {
   constructor(
@@ -35,40 +35,53 @@ export class AuthService {
     console.error(`[AuthService:${context}]`, error);
 
     // Generic error to client
-    throw new InternalServerErrorException('Something went wrong. Please try again.');
+    throw new InternalServerErrorException(
+      'Something went wrong. Please try again.',
+    );
   }
 
   // Generate OTP
-  private genOtp(): string {
-    return String(Math.floor(100000 + Math.random() * 900000));
+  private genOtp(): number {
+    return Math.floor(100000 + Math.random() * 900000);
   }
 
   // ------------------- REGISTER -------------------
   async register(dto: RegisterDto) {
     try {
+      console.log(1);
       const exists = await this.usersService.findByEmail(dto.email);
       if (exists) {
         throw new BadRequestException('Email already registered');
       }
 
+      console.log(2);
       const hashed = await Hash.make(dto.password);
+      console.log(3);
       const otp = this.genOtp();
+      console.log(4);
 
       const user = await this.usersService.create({
         ...dto,
         password: hashed,
-        otpCode: otp,
+        otpCode: String(otp),
         otpExpiry: new Date(Date.now() + 10 * 60 * 1000), // 10 min
       });
+      console.log(5);
 
-       if (!user) {
+      if (!user) {
         throw new BadRequestException('User is not created');
       }
 
-      await this.mail.sendOtp(user?.email, otp);
-
+      await this.mail.sendOTPEmail({
+        name: user.lastName,
+        to: user?.email,
+        subject: '',
+        otp: otp,
+      });
+      console.log(6);
       return { message: 'OTP sent to email' };
     } catch (error) {
+      console.log('error', error);
       this.handleError(error, 'register');
     }
   }
@@ -122,7 +135,11 @@ export class AuthService {
         throw new UnauthorizedException('Account is inactive');
       }
 
-      const token = this.jwt.sign({ id: user._id, email: user.email, role: user.role });
+      const token = this.jwt.sign({
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      });
 
       return {
         token,
@@ -149,11 +166,11 @@ export class AuthService {
 
       const otp = this.genOtp();
 
-      user.resetOtp = otp;
+      user.resetOtp = String(otp);
       user.resetOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
       await user.save();
 
-      await this.mail.sendResetOtp(user.email, otp);
+      // await this.mail.sendResetOtp(user.email, otp);
 
       return { message: 'Reset OTP sent' };
     } catch (error) {

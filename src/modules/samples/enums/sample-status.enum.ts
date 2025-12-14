@@ -1,0 +1,8 @@
+export enum SampleStatus {
+  CREATED = 'CREATED',
+  COLLECTED = 'COLLECTED',
+  IN_LAB = 'IN_LAB',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED',
+}

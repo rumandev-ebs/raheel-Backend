@@ -8,7 +8,7 @@ import { GetUsersQueryDto } from './dto/get-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard) // apply to all routes in this controller
+// @UseGuards(JwtAuthGuard, RolesGuard) // apply to all routes in this controller
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
